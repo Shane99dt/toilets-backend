@@ -1,30 +1,46 @@
-require("dotenv").config()
-require('./models')
-const { Toilet } = require('./models')
-const toilets = require('./sanisettesparis.json')
-
+require("dotenv").config();
+require("./models");
+const { Toilet } = require("./models");
+const toilets = require("./sanisettesparis.json");
 
 const createToilet = async () => {
-  await Toilet.destroy({ where: {}})
+  await Toilet.destroy({ where: {} });
 
-  toilets.forEach(async (toilet) => {
-    const longitude = toilet.fields.geo_point_2d[1]
-    const latitude = toilet.fields.geo_point_2d[0]
-
+  const createToilet = async (
+    latitude,
+    longitude,
+    address,
+    hours,
+    arrondissement
+  ) => {
     const point = {
-      type: 'Point',
-      coordinates: [longitude, latitude]
-    }
+      type: "Point",
+      coordinates: [longitude, latitude],
+    };
 
-    const newToilet = await Toilet.create({
-      address: toilet.fields.adresse,
+    const toilet = await Toilet.create({
+      address,
       position: point,
-      hours: toilet.fields.horaire,
-      arrondissement: toilet.fields.arrondissement
-    })
+      hours,
+      arrondissement,
+    });
 
-    console.log(newToilet.address)
-  })
-}
+    return toilet;
+  };
 
-createToilet()
+  const promises = toilets.map((toilet) => {
+    return createToilet(
+      toilet.fields.geo_point_2d[0],
+      toilet.fields.geo_point_2d[1],
+      toilet.fields.adresse,
+      toilet.fields.horaire,
+      toilet.fields.arrondissement
+    );
+  });
+
+  await Promise.all(promises);
+
+  console.log("imported");
+};
+
+createToilet();
